@@ -20,7 +20,7 @@ namespace PTCL_Library
             public int Version { get; set; }
             public int EmitterDataSetCount { get; set; }
 
-            public int UnknownOffset1 { get; set; }
+            public int NameOffset { get; set; } // Starts from the beginning of the string table.
             public int StringDataOffset { get; set; }
             public int ImageDataOffset { get; set; }
             public int ImageDataSize { get; set; }
