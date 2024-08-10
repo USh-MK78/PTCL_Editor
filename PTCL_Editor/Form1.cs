@@ -60,7 +60,8 @@ namespace PTCL_Editor
                 }
 
                 TreeNode treeNode = new TreeNode("Root");
-                treeNode.Nodes.Add(new TreeNode("EmitterDataSet", EmitterDataSetTreeNodeList.ToArray()));
+                treeNode.Nodes.Add(new TreeNode(SPBDData.Name, EmitterDataSetTreeNodeList.ToArray()));
+                //treeNode.Nodes.Add(new TreeNode("EmitterDataSet", EmitterDataSetTreeNodeList.ToArray()));
 
 
 

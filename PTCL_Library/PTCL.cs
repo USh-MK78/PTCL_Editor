@@ -16,8 +16,10 @@ namespace PTCL_Library
         /// </summary>
         public class SPBD
         {
+            public string Name;
+
             public char[] SPBD_Header { get; set; }
-            public int Version { get; set; }
+            public byte[] Version { get; set; }
             public int EmitterDataSetCount { get; set; }
 
             public int NameOffset { get; set; } // Starts from the beginning of the string table.
@@ -465,7 +467,6 @@ namespace PTCL_Library
                     Unknown_ByteData = new UnknownByteData();
                     EmitterDataSetNameCharArrayOffset = 0;
                     EmitterDataSetName = "";
-                    //EmitterDataSetCharArray = new List<char>().ToArray();
                     UnknownByteData2 = new byte[4];
                     EmitterCount = 0;
                     EmitterDataOffset = 0;
@@ -473,6 +474,8 @@ namespace PTCL_Library
                     UnknownByteData3 = new byte[4];
                 }
             }
+
+            public byte[] ETC1_ImageData { get; set; }
 
             public void Read_SPBD(BinaryReader br, byte[] BOM)
             {
@@ -482,13 +485,43 @@ namespace PTCL_Library
                 if (new string(SPBD_Header) != "SPBD") throw new Exception("Unknown Format.");
 
                 EndianConvert endianConvert = new EndianConvert(BOM);
-                UnknownByteData1 = endianConvert.Convert(br.ReadBytes(4));
+                Version = endianConvert.Convert(br.ReadBytes(4));
                 EmitterDataSetCount = BitConverter.ToInt32(endianConvert.Convert(br.ReadBytes(4)), 0);
 
-                UnknownOffset1 = BitConverter.ToInt32(endianConvert.Convert(br.ReadBytes(4)), 0);
+                NameOffset = BitConverter.ToInt32(endianConvert.Convert(br.ReadBytes(4)), 0);
                 StringDataOffset = BitConverter.ToInt32(endianConvert.Convert(br.ReadBytes(4)), 0);
+                if (StringDataOffset != 0)
+                {
+                    //ReadName
+                    long CurrentPos = br.BaseStream.Position;
+
+                    //Move SPBD
+                    br.BaseStream.Position = SPBDPos;
+
+                    br.BaseStream.Seek(StringDataOffset, SeekOrigin.Current);
+
+                    ReadByteLine readByteLine = new ReadByteLine(new List<byte>());
+                    readByteLine.ReadByte(br, 0x00);
+                    Name = new string(readByteLine.ConvertToCharArray());
+
+                    //Leave CurrentPos
+                    br.BaseStream.Position = CurrentPos;
+                }
+
                 ImageDataOffset = BitConverter.ToInt32(endianConvert.Convert(br.ReadBytes(4)), 0);
-                UnknownOffset4 = BitConverter.ToInt32(endianConvert.Convert(br.ReadBytes(4)), 0);
+                ImageDataSize = BitConverter.ToInt32(endianConvert.Convert(br.ReadBytes(4)), 0);
+                if (ImageDataOffset != 0)
+                {
+                    long Pos = br.BaseStream.Position;
+
+                    br.BaseStream.Seek(0, SeekOrigin.Begin);
+
+                    br.BaseStream.Seek(ImageDataOffset, SeekOrigin.Current);
+
+                    ETC1_ImageData = br.ReadBytes(ImageDataSize);
+
+                    br.BaseStream.Position = Pos;
+                }
 
                 if ((EmitterDataSetCount != 0 && 0 < EmitterDataSetCount) == true)
                 {
@@ -505,14 +538,18 @@ namespace PTCL_Library
 
             public SPBD()
             {
+                Name = "";
+
                 SPBD_Header = "SPBD".ToArray();
-                UnknownByteData1 = new byte[4];
+                Version = new byte[4];
                 EmitterDataSetCount = 0;
                 EmitterDataSet_List = new List<EmitterDataSet>();
-                UnknownOffset1 = 0;
+                NameOffset = 0;
                 StringDataOffset = 0;
                 ImageDataOffset = 0;
-                UnknownOffset4 = 0;
+                ImageDataSize = 0;
+
+                ETC1_ImageData = new byte[ImageDataSize];
             }
         }
 
